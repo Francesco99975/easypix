@@ -1,32 +1,28 @@
 package convert
 
 import (
-	"errors"
+	"fmt"
 	"image"
+	_ "image/jpeg" // For JPEG format
+	_ "image/png"  // For PNG format
 	"mime/multipart"
 	"os"
 
 	"github.com/chai2010/webp"
 )
 
-func ToWebP(file *multipart.File) (*os.File, error) {
-	outputPath := "output.webp"
-    outputFile, err := os.CreateTemp(outputPath, "*")
-	if err != nil {
-        return &os.File{}, errors.New("unable to create the output file")
-    }
-
+func ToWebP(file *multipart.File, uploadFile *os.File) error{
 	// Decode the input image
     img, _, err := image.Decode(*file)
     if err != nil {
-        return &os.File{}, errors.New("unable to decode the image file")
+        return fmt.Errorf("unable to decode the image file: %s", err.Error())
     }
 
 	// Encode the image to WebP format
-    err = webp.Encode(outputFile, img, nil)
+    err = webp.Encode(uploadFile, img, nil)
     if err != nil { 
-        return &os.File{}, errors.New("unable to encode the image to WebP format")
+        return fmt.Errorf("unable to encode the image to WebP format: %s", err.Error())
     }
 
-	return outputFile, err
+	return err
 } 

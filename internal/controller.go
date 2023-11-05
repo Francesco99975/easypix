@@ -21,7 +21,7 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		err := r.ParseMultipartForm(10 << 20)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, "File too large", http.StatusBadRequest)
 			return
 		}
 
@@ -38,30 +38,40 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Unsupported file type. Only PNG, JPG, JPEG, and WEBP are allowed.", http.StatusBadRequest)
 			return
 		}
-		
-		uniqueFilename := genid(ext)
+
+		var uniqueFilename string
 		var uploadedFile *os.File
 		if ext != ".webp" {
-			output, err := convert.ToWebP(&file)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			uploadedFile = output
-		} else {
+			uniqueFilename = genid(".webp")
 			uploadedFile, err = os.Create(path.Join("uploads", uniqueFilename))
 			if err != nil {
 				http.Error(w, "Error while writing file on the server", http.StatusInternalServerError)
 				return
 			}
+
+			err := convert.ToWebP(&file, uploadedFile)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			
+		} else {
+			uniqueFilename = genid(ext)
+			uploadedFile, err = os.Create(path.Join("uploads", uniqueFilename))
+			if err != nil {
+				http.Error(w, "Error while writing file on the server", http.StatusInternalServerError)
+				return
+			}
+
+			_, err = io.Copy(uploadedFile, file)
+			if err != nil {
+				http.Error(w, "Error while saving the file", http.StatusInternalServerError)
+				return
+			}
 		}
 		defer uploadedFile.Close()
 
-		_, err = io.Copy(uploadedFile, file)
-		if err != nil {
-			http.Error(w, "Error while saving the file", http.StatusInternalServerError)
-			return
-		}
+		
 
 		url := fmt.Sprintf("/images/%s", uniqueFilename)
 		response := UploadResponse{URL: url}
