@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	convert "github.com/Francesco99975/easypix/pkg"
 )
@@ -83,6 +84,27 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 
 		w.Write(jsonResponse)
 	} else {
-		http.Error(w, "Invalid Method. Onlu POST Allowed.", http.StatusMethodNotAllowed)
+		http.Error(w, "Invalid Method. Only POST Allowed.", http.StatusMethodNotAllowed)
+	}
+}
+
+func Delete(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodDelete {
+		url := r.URL.Path
+		segments := strings.Split(url, "/")
+
+		if len(segments) >= 3 {
+			id := segments[2]
+
+			err := os.Remove(path.Join("uploads", fmt.Sprintf("%s.webp", id)))
+
+			if err != nil {
+				http.Error(w, "Image file not found...", http.StatusNotFound)
+			}
+		} else {
+			http.Error(w, "Paramenter not provided...", http.StatusBadRequest)
+		}
+	} else {
+		http.Error(w, "Invalid Method. Only DELETE Allowed.", http.StatusMethodNotAllowed)
 	}
 }

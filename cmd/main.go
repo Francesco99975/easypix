@@ -13,6 +13,7 @@ import (
 func main() {
 	
 	http.HandleFunc("/upload", controller.Upload)
+	http.HandleFunc("/delete/", controller.Delete)
 	http.Handle("/images/", http.StripPrefix("/images/", http.FileServer(http.Dir("uploads"))))
 
 	os.Mkdir("uploads", os.ModePerm)
