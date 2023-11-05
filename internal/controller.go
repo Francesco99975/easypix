@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 )
 
 type UploadResponse struct {
@@ -64,39 +63,4 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 	} else {
 		http.Error(w, "Invalid Method. Onlu POST Allowed.", http.StatusMethodNotAllowed)
 	}
-}
-
-func imageHandler(w http.ResponseWriter, r *http.Request) {
-	fileName := r.URL.Query().Get("file")
-	if fileName == "" {
-		http.Error(w, "File parameter is missing", http.StatusBadRequest)
-		return
-	}
-
-	filePath := filepath.Join("uploads", fileName)
-	file, err := os.Open(filePath)
-	if err != nil {
-		http.Error(w, "File not found", http.StatusNotFound)
-		return
-	}
-	defer file.Close()
-
-	// Set the Content-Disposition header to suggest a filename for the downloaded file
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
-
-	// Determine the file's content type based on the file extension
-	contentType := "application/octet-stream"
-	switch strings.ToLower(filepath.Ext(fileName)) {
-	case ".png":
-		contentType = "image/png"
-	case ".jpg", ".jpeg":
-		contentType = "image/jpeg"
-	case ".webp":
-		contentType = "image/webp"
-	}
-
-	w.Header().Set("Content-Type", contentType)
-
-	// Serve the file
-	io.Copy(w, file)
 }
