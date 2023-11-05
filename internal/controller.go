@@ -8,6 +8,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+
+	convert "github.com/Francesco99975/easypix/pkg"
 )
 
 type UploadResponse struct {
@@ -36,12 +38,22 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Unsupported file type. Only PNG, JPG, JPEG, and WEBP are allowed.", http.StatusBadRequest)
 			return
 		}
-
+		
 		uniqueFilename := genid(ext)
-		uploadedFile, err := os.Create(path.Join("uploads", uniqueFilename))
-		if err != nil {
-			http.Error(w, "Error while writing file on the server", http.StatusInternalServerError)
-			return
+		var uploadedFile *os.File
+		if ext != ".webp" {
+			output, err := convert.ToWebP(&file)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			uploadedFile = output
+		} else {
+			uploadedFile, err = os.Create(path.Join("uploads", uniqueFilename))
+			if err != nil {
+				http.Error(w, "Error while writing file on the server", http.StatusInternalServerError)
+				return
+			}
 		}
 		defer uploadedFile.Close()
 
