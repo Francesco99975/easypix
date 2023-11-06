@@ -12,13 +12,11 @@ RUN GOOS=linux go build -ldflags="-s -w" -o ./bin/easypix ./cmd/main.go
 
 FROM alpine:3.18
 
-RUN apk update && apk upgrade && apk --no-cache add ca-certificates && adduser -D gouser
+RUN apk update && apk upgrade && apk --no-cache add ca-certificates
 
-USER gouser
+WORKDIR /go/bin
 
-WORKDIR /usr/bin
-
-COPY --chown=gouser:gouser --from=build /go/src/app/bin /go/bin
+COPY --from=build /go/src/app/bin /go/bin
 
 EXPOSE 8888
 
