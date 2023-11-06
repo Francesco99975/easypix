@@ -1,21 +1,25 @@
-FROM golang:1.21.2 AS builder
+FROM golang:1.21.2-alpine3.18 AS build
 
-WORKDIR /app
+RUN apk --no-cache add gcc g++ make git
 
-# Copy the Go application source code into the container
+WORKDIR /go/src/app
+
 COPY . .
 
-# Build the Go application inside the container
-RUN go build -o easypix cmd/main.go
+RUN go mod tidy
 
-# Stage 2: Create the final lightweight image
-FROM scratch
+RUN GOOS=linux go build -ldflags="-s -w" -o ./bin/easypix ./cmd/main.go
 
-# Copy the built Go binary from the builder stage
-COPY --from=builder /app/easypix /app/easypix
+FROM alpine:3.18
 
-# Expose the port on which the web server will listen
+RUN apk update && apk upgrade && apk --no-cache add ca-certificates && adduser -D gouser
+
+USER gouser
+
+WORKDIR /usr/bin
+
+COPY --chown=gouser:gouser --from=build /go/src/app/bin /go/bin
+
 EXPOSE 8888
 
-# Define the command to run your Go web server
-CMD ["/app/easypix"]
+ENTRYPOINT /go/bin/easypix --port 8888
