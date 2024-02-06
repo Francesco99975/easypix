@@ -20,15 +20,14 @@ func main() {
 	})
 	http.HandleFunc("/upload", controller.Upload)
 	http.HandleFunc("/delete/", controller.Delete)
-	http.Handle("/images/", http.StripPrefix("/images/", http.FileServer(http.Dir("uploads"))))
+	http.Handle("/images/", controller.EnableCORS(http.StripPrefix("/images/", http.FileServer(http.Dir("uploads")))))
 
-	handler := controller.EnableCORS(http.DefaultServeMux)
 
 	err := os.Mkdir("uploads", os.ModePerm)
 	if err != nil {
-		fmt.Printf("Could not create uploads directory. Error: %s.", err.Error())
+		fmt.Printf("Could not create uploads directory. Cause: %s.\n", err.Error())
 	}
 	
 	fmt.Println("Server is running on :8888")
-	log.Fatal(http.ListenAndServe(":8888", handler))
+	log.Fatal(http.ListenAndServe(":8888", nil))
 }
